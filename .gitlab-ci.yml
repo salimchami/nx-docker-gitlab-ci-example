@@ -1,4 +1,4 @@
-image: node:20
+image: docker:latest
 
 services:
   - docker:dind
@@ -13,8 +13,10 @@ stages:
   - deploy
 
 before_script:
-  - npm i -g @nrwl/cli
-  - npm i -g nx
+  - apk add --no-cache bash
+  - docker info
+  - npm install -g nx
+  - npm install
 
 check:
   stage: check
@@ -24,25 +26,38 @@ check:
     paths:
       - affected_apps.txt
 
-build_app1:
+build:
   stage: build
   script:
-    - if grep -q "app1" affected_apps.txt; then docker-compose build app1; fi
+    - |
+      if grep -q "app1" affected_apps.txt; then
+        npx nx run app1:docker-build;
+      fi
+    - |
+      if grep -q "app2" affected_apps.txt; then
+        npx nx run app2:docker-build;
+      fi
 
-build_app2:
-  stage: build
-  script:
-    - if grep -q "app2" affected_apps.txt; then docker-compose build app2; fi
-
-test_app1:
+test:
   stage: test
   script:
-    - if grep -q "app1" affected_apps.txt; then docker-compose run app1 npm test; fi
+    - |
+      if grep -q "app1" affected_apps.txt; then
+        docker-compose up -d app1;
+        npx nx run app1:docker-test;
+        npx nx run app1:docker-stop;
+      fi
+    - |
+      if grep -q "app2" affected_apps.txt; then
+        docker-compose up -d app2;
+        npx nx run app2:docker-test;
+        npx nx run app2:docker-stop;
+      fi
 
-test_app2:
-  stage: test
-  script:
-    - if grep -q "app2" affected_apps.txt; then docker-compose run app2 npm test; fi
+#deploy:
+#  stage: deploy
+#  script:
+#    - if grep -q "app2" affected_apps.txt; then docker-compose run app2 npm test; fi
 
 #deploy:
 #  stage: deploy

@@ -10,7 +10,19 @@
     "docker-run": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "docker run -p 3000:3000 app2:latest"
+        "command": "docker run -d --name app2-container -p 3001:3000 app2:latest"
+      }
+    },
+    "docker-test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docker exec app2-container npm test"
+      }
+    },
+    "docker-stop": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docker stop app2-container && docker rm app2-container"
       }
     }
   }
