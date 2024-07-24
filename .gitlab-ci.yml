@@ -1,25 +1,72 @@
 image: node:20
-variables:
-  CI: 'true'
 
-# Main job
-CI:
-  interruptible: true
-  only:
-    - main
-    - merge_requests
+services:
+  - docker:dind
+
+variables:
+  DOCKER_DRIVER: overlay2
+
+stages:
+  - check
+  - build
+  - test
+  - deploy
+
+before_script:
+  - npm i -g @nrwl/cli
+  - npm i -g nx
+
+check:
+  stage: check
   script:
+    - npx nx affected:apps --plain > affected_apps.txt
+  artifacts:
+    paths:
+      - affected_apps.txt
+
+build_app1:
+  stage: build
+  script:
+    - if grep -q "app1" affected_apps.txt; then docker-compose build app1; fi
+
+build_app2:
+  stage: build
+  script:
+    - if grep -q "app2" affected_apps.txt; then docker-compose build app2; fi
+
+test_app1:
+  stage: test
+  script:
+    - if grep -q "app1" affected_apps.txt; then docker-compose run app1 npm test; fi
+
+test_app2:
+  stage: test
+  script:
+    - if grep -q "app2" affected_apps.txt; then docker-compose run app2 npm test; fi
+
+#deploy:
+#  stage: deploy
+#  script:
+#
+
+
+#CI:
+#  interruptible: true
+#  only:
+#    - main
+#    - merge_requests
+#  script:
     # This enables task distribution via Nx Cloud
     # Run this command as early as possible, before dependencies are installed
     # Learn more at https://nx.dev/ci/reference/nx-cloud-cli#npx-nxcloud-startcirun
-    - npx nx-cloud start-ci-run --distribute-on="3 linux-medium-js" --stop-agents-after="e2e-ci"
+#    - npx nx-cloud start-ci-run --distribute-on="3 linux-medium-js" --stop-agents-after="e2e-ci"
 
-    - npm ci --legacy-peer-deps
-    - NX_HEAD=$CI_COMMIT_SHA
-    - NX_BASE=${CI_MERGE_REQUEST_DIFF_BASE_SHA:-$CI_COMMIT_BEFORE_SHA}
+#    - npm ci --legacy-peer-deps
+#    - NX_HEAD=$CI_COMMIT_SHA
+#    - NX_BASE=${CI_MERGE_REQUEST_DIFF_BASE_SHA:-$CI_COMMIT_BEFORE_SHA}
 
     # Prepend any command with "nx-cloud record --" to record its logs to Nx Cloud
     # - npx nx-cloud record -- echo Hello World
     # Nx Affected runs only tasks affected by the changes in this PR/commit. Learn more: https://nx.dev/ci/features/affected
-    - npx nx affected --base=$NX_BASE --head=$NX_HEAD -t lint test build
-    - npx nx affected --base=$NX_BASE --head=$NX_HEAD --parallel 1 -t e2e-ci
+#    - npx nx affected --base=$NX_BASE --head=$NX_HEAD -t lint test build
+#    - npx nx affected --base=$NX_BASE --head=$NX_HEAD --parallel 1 -t e2e-ci

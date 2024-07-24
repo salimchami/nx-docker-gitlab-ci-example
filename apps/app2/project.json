@@ -1,0 +1,17 @@
+{
+  "name": "app2",
+  "targets": {
+    "docker-build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docker build -t app2:latest -f apps/app2/Dockerfile ."
+      }
+    },
+    "docker-run": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docker run -p 3000:3000 app2:latest"
+      }
+    }
+  }
+}

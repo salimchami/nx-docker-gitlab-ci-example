@@ -1,0 +1,15 @@
+---
+
+services:
+  app1:
+    build:
+      context: .
+      dockerfile: apps/app1/Dockerfile
+    ports:
+      - "3001:3000"
+  app2:
+    build:
+      context: .
+      dockerfile: apps/app2/Dockerfile
+    ports:
+      - "3002:3000"
